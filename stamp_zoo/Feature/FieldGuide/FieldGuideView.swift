@@ -84,52 +84,44 @@ struct FieldGuideView: View {
             if let animal = animal {
                 // 수집된 동물 - 클릭 가능
                 NavigationLink(destination: FieldGuideDetailView(animal: animal)) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(isAnimalCollected(animal) ? Color("zooBackgroundBlack").opacity(0.8) : Color.gray.opacity(0.5))
-                            .frame(height: 100)
-                        
-                        // 모든 동물 이미지 표시 (수집 여부에 관계없이)
-                        VStack(spacing: 4) {
-                            ZStack {
-                                // 동물 이미지
-                                Group {
-                                    if let image = UIImage(named: animal.stampImage) {
-                                        Image(uiImage: image)
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                    } else {
-                                        // 이미지 로드 실패 시 기본 이미지
-                                        Image("default_image")
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
+                    Group {
+                        if let image = UIImage(named: animal.stampImage) {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(height: 100)
+                                .clipped()
+                                .overlay(
+                                    // 미수집된 동물은 어두운 오버레이 추가
+                                    Group {
+                                        if !isAnimalCollected(animal) {
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(Color.black.opacity(0.7))
+                                                .overlay(
+                                                    Image(systemName: "questionmark")
+                                                        .font(.title2)
+                                                        .foregroundColor(.white)
+                                                )
+                                        }
                                     }
-                                }
-                                .padding(12)
-                                
-                                // 미수집된 동물은 어두운 오버레이 추가
-                                if !isAnimalCollected(animal) {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.black.opacity(0.7))
-                                        .frame(width: 70, height: 60)
-                                        .overlay(
-                                            Image(systemName: "questionmark")
-                                                .font(.title2)
-                                                .foregroundColor(.white)
-                                        )
-                                }
-                            }
+                                )
+                        } else {
+                            // 이미지 로드 실패 시 기본 이미지
+                            Image("default_image")
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(height: 100)
+                                .clipped()
                         }
                     }
+                    .clipShape(RoundedRectangle(cornerRadius: 15))
                 }
                 .buttonStyle(PlainButtonStyle())
             } else {
                 // 빈 도감 슬롯 - 클릭 불가
-                ZStack {
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(Color("zooBackgroundBlack"))
-                        .frame(height: 100)
-                }
+                RoundedRectangle(cornerRadius: 15)
+                    .fill(Color("zooBackgroundBlack"))
+                    .frame(height: 100)
             }
         }
     }

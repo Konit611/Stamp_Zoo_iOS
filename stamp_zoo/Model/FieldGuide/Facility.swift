@@ -62,7 +62,7 @@ final class Facility {
     var detailJa: String
     var detailZh: String
 
-    @Relationship(deleteRule: .cascade, inverse: \Animal.facility)
+    @Relationship(deleteRule: .cascade)
     var animals: [Animal]?
     
     // GPS 위치 정보

@@ -18,6 +18,7 @@ struct BingoHomeView: View {
         case settings
         case bingoDetail
         case bingoQR
+        case appInfo
     }
     
     var body: some View {
@@ -56,6 +57,9 @@ struct BingoHomeView: View {
                 case .bingoQR:
                     BingoQRView()
                         .navigationBarTitleDisplayMode(.inline)
+                case .appInfo:
+                    AppInfoView()
+                        .navigationBarTitleDisplayMode(.inline)
                 }
             }
             .onAppear {
@@ -68,10 +72,18 @@ struct BingoHomeView: View {
     // MARK: - Header View
     private func headerView() -> some View {
         HStack {
-            // 보라색 원
-            Circle()
-                .fill(Color.purple)
-                .frame(width: 40, height: 40)
+            // 앱 로고가 있는 하얀색 원 (탭 가능)
+            NavigationLink(value: NavigationDestination.appInfo) {
+                Image("app_logo")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 45, height: 45)
+                    .background(
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 55, height: 55)
+                    )
+            }
             
             Spacer()
             
@@ -132,31 +144,31 @@ struct BingoHomeView: View {
     private func stampCell(for index: Int) -> some View {
         let stamp = viewModel.getStamp(at: index)
         
-        return ZStack {
-            RoundedRectangle(cornerRadius: 15)
-                .fill(Color("zooBackgroundBlack"))
-                .frame(height: 100)
-            
+        return Group {
             if let stamp = stamp, stamp.isCollected, let animal = stamp.animal {
-                // 수집된 스탬프 표시
-                VStack {
-                    Group {
-                        if let image = UIImage(named: animal.stampImage) {
-                            Image(uiImage: image)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                        } else {
-                            // 이미지 로드 실패 시 기본 이미지
-                            Image("default_image")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                        }
-                    }
+                // 수집된 스탬프 이미지로 fill
+                if let image = UIImage(named: animal.stampImage) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(height: 100)
+                        .clipped()
+                } else {
+                    // 이미지 로드 실패 시 기본 이미지
+                    Image("default_image")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(height: 100)
+                        .clipped()
                 }
-                .padding(8)
+            } else {
+                // 빈 스탬프 슬롯은 배경색으로 fill
+                RoundedRectangle(cornerRadius: 15)
+                    .fill(Color("zooBackgroundBlack"))
+                    .frame(height: 100)
             }
-            // 빈 스탬프 슬롯은 배경색만 표시 (아무 내용 없음)
         }
+        .clipShape(RoundedRectangle(cornerRadius: 15))
     }
     
     // MARK: - QR Button
@@ -183,4 +195,5 @@ struct BingoHomeView: View {
 #Preview {
     BingoHomeView()
 }
+
 

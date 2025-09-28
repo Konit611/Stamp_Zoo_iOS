@@ -160,8 +160,8 @@ class JSONDataService {
             }
             
             // 주의: BingoAnimal과 StampCollection은 여기서 삭제하지 않음
-            // - BingoAnimal: Field Guide 수집 기록 (영구 보존)
-            // - StampCollection: Bingo 진행 상태 (refresh 신호 시에만 초기화)
+            // - StampCollection: Field Guide 수집 기록 (영구 보존)
+            // - BingoAnimal: Bingo 진행 상태 (refresh 신호 시에만 초기화)
             
             try context.save()
             print("기존 동물원 데이터 삭제 완료 (스탬프 수집 데이터는 보존)")
@@ -201,13 +201,13 @@ class JSONDataService {
                 }
             }
             
-            // refresh 신호에 따라 새 시즌 시작 (StampCollection만 초기화)
+            // refresh 신호에 따라 새 시즌 시작 (BingoAnimal만 초기화)
             print("🔍 refreshBingoAnimals 값: \(zooData.refreshBingoAnimals ?? false)")
             if zooData.refreshBingoAnimals == true {
                 print("🚀 새 시즌 시작 - 빙고 게임 초기화 (새로운 빙고 시작)")
-                await clearStampCollections(in: context)
-                print("✅ 새 시즌 시작: 빙고 게임(StampCollection)이 초기화되었습니다.")
-                print("📝 BingoAnimal은 보존됨 (Field Guide 수집 기록 유지)")
+                await clearBingoAnimals(in: context)
+                print("✅ 새 시즌 시작: 빙고 게임(BingoAnimal)이 초기화되었습니다.")
+                print("📝 StampCollection은 보존됨 (Field Guide 수집 기록 유지)")
             } else {
                 print("⏸️ refresh 신호 없음 - 기존 수집 데이터 유지")
             }
@@ -295,29 +295,6 @@ class JSONDataService {
         }
     }
     
-    /// StampCollection 테이블 초기화 (새 시즌 시작 - 빙고 게임 리셋)
-    private static func clearStampCollections(in context: ModelContext) async {
-        do {
-            let descriptor = FetchDescriptor<StampCollection>()
-            let stampCollections = try context.fetch(descriptor)
-            print("🗑️ 삭제할 StampCollection 개수: \(stampCollections.count)")
-            
-            for stampCollection in stampCollections {
-                print("  - 삭제: StampCollection 빙고번호=\(stampCollection.bingoNumber)")
-                context.delete(stampCollection)
-            }
-            
-            try context.save()
-            print("✅ StampCollection 데이터 삭제 완료 (새 빙고 시작)")
-            
-            // 삭제 후 확인
-            let checkDescriptor = FetchDescriptor<StampCollection>()
-            let remainingCollections = try context.fetch(checkDescriptor)
-            print("🔍 삭제 후 남은 StampCollection 개수: \(remainingCollections.count)")
-            
-        } catch {
-            print("❌ StampCollection 데이터 삭제 실패: \(error)")
-        }
-    }
+
 
 }

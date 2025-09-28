@@ -1,0 +1,9 @@
+/* App Display Name */
+"CFBundleDisplayName" = "激动人心的印章拉力赛";
+
+/* Camera Usage Description */
+"NSCameraUsageDescription" = "需要相机访问权限来扫描QR码并收集邮票。";
+
+/* Location Usage Descriptions */
+"NSLocationWhenInUseUsageDescription" = "在设施内收集邮票时需要位置访问权限来验证位置。";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "在设施内收集邮票时需要位置访问权限来验证位置。";

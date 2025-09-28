@@ -27,6 +27,7 @@ final class Animal {
     
     var image: String
     var stampImage: String
+    @Relationship(inverse: \Facility.animals)
     var facility: Facility
 
     // 현재 언어에 맞는 이름 반환

@@ -26,6 +26,9 @@ struct FieldGuideDetailView: View {
             .padding(.bottom, 100) // 탭바 공간 확보
         }
         .background(Color(.systemGray6))
+        .safeAreaInset(edge: .top) {
+            Color.clear.frame(height: 1) // 상단 SafeArea 확실히 보호
+        }
         .navigationTitle(animal.name)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
@@ -47,39 +50,48 @@ struct FieldGuideDetailView: View {
                             Image(uiImage: image)
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
+                                .frame(height: 400)
+                                .clipped()
                         } else {
-                            Image(systemName: "photo")
-                                .font(.system(size: 80))
-                                .foregroundColor(.white.opacity(0.8))
+                            Image("default_image")
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(height: 400)
+                                .clipped()
                         }
                     }
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .padding(.horizontal, 20)
-        .padding(.top, 20)
+        .padding(.top, 20) // 네비게이션 바와의 겹침 방지를 위한 추가 패딩
     }
     
     private var animalInfoView: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // 동물 이름과 지역명
+            // 동물 이름과 동물원 로고
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(animal.name)
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.black)
-                    
-                    Text(getAnimalSubName(animal.name))
-                        .font(.system(size: 18))
-                        .foregroundColor(.black.opacity(0.8))
                 }
                 
                 Spacer()
                 
-                // 지역명 (동물원 이름)
-                Text(animal.facility.name)
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.black)
+                // 동물원 로고
+                if let logoImage = UIImage(named: animal.facility.logoImage) {
+                    Image(uiImage: logoImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 60, height: 60)
+                } else {
+                    // 로고 이미지가 없을 때 기본 아이콘
+                    Image(systemName: "building.2")
+                        .font(.system(size: 40))
+                        .foregroundColor(.black.opacity(0.6))
+                        .frame(width: 60, height: 60)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
@@ -106,17 +118,6 @@ struct FieldGuideDetailView: View {
         }
     }
     
-    private func getAnimalSubName(_ name: String) -> String {
-        switch name {
-        case "늑대": return "おおかみ"
-        case "얼룩말": return "しまうま"
-        case "하마": return "かば"
-        case "치타": return "ちーたー"
-        case "북극곰": return "ほっきょくぐま"
-        case "바다사자": return "あしか"
-        default: return name.lowercased()
-        }
-    }
     
     private func getLongDescription(_ name: String) -> String {
         switch name {

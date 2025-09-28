@@ -114,7 +114,7 @@ class QRValidationService {
         }
     }
     
-    /// 동물 UUID로 QR 코드 검증 (위치 제한 없음)
+    /// 동물 UUID로 QR 코드 검증 (위치 검증 포함)
     private func validateAnimalQRCode(_ code: String) -> QRValidationResult {
         guard let animalUUID = extractAnimalUUID(from: code) else {
             return .invalidCode
@@ -128,7 +128,22 @@ class QRValidationService {
             return .alreadyCollected(animal: animal)
         }
         
-        return .success(animal: animal, facility: animal.facility)
+        // 위치 검증 추가
+        guard locationService.hasLocationPermission else {
+            return .locationUnavailable
+        }
+        
+        guard locationService.currentLocation != nil else {
+            return .locationUnavailable
+        }
+        
+        let facility = animal.facility
+        if !locationService.isUserInFacilityRange(facility) {
+            let distance = locationService.distanceToFacility(facility) ?? 0
+            return .invalidLocation(requiredFacility: facility, distance: distance)
+        }
+        
+        return .success(animal: animal, facility: facility)
     }
     
     /// 테스트용 QR 코드 검증 (위치 제한 없음) - UUID 기반

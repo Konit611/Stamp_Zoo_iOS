@@ -66,7 +66,7 @@ struct ExplorerDetailView: View {
                             if let logoImage = UIImage(named: facility.logoImage) {
                                 Image(uiImage: logoImage)
                                     .resizable()
-                                    .aspectRatio(contentMode: .fill)
+                                    .aspectRatio(contentMode: .fit)
                                     .frame(width: 50, height: 50)
                             } else {
                                 Image(systemName: "building.2")

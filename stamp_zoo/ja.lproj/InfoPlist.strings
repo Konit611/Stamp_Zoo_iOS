@@ -1,0 +1,9 @@
+/* App Display Name */
+"CFBundleDisplayName" = "わくわくスタンプラリー";
+
+/* Camera Usage Description */
+"NSCameraUsageDescription" = "QRコードをスキャンしてスタンプを収集するためにカメラアクセスが必要です。";
+
+/* Location Usage Descriptions */
+"NSLocationWhenInUseUsageDescription" = "施設内でのスタンプ収集時に位置確認のため位置情報アクセスが必要です。";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "施設内でのスタンプ収集時に位置確認のため位置情報アクセスが必要です。";

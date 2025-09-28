@@ -1,0 +1,9 @@
+/* App Display Name */
+"CFBundleDisplayName" = "두근두근 스탬프 랠리";
+
+/* Camera Usage Description */
+"NSCameraUsageDescription" = "QR 코드를 스캔하여 스탬프를 수집하기 위해 카메라 접근이 필요합니다.";
+
+/* Location Usage Descriptions */
+"NSLocationWhenInUseUsageDescription" = "시설 내에서 스탬프 수집 시 위치 확인을 위해 위치 접근이 필요합니다.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "시설 내에서 스탬프 수집 시 위치 확인을 위해 위치 접근이 필요합니다.";

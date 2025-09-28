@@ -1,0 +1,9 @@
+/* App Display Name */
+"CFBundleDisplayName" = "Exciting Stamp Rally";
+
+/* Camera Usage Description */
+"NSCameraUsageDescription" = "Camera access is required to scan QR codes and collect stamps.";
+
+/* Location Usage Descriptions */
+"NSLocationWhenInUseUsageDescription" = "Location access is required to verify stamp collection within facilities.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Location access is required to verify stamp collection within facilities.";
