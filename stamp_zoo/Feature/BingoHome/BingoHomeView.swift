@@ -12,7 +12,7 @@ struct BingoHomeView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = BingoHomeViewModel()
     @State private var presentedDestination: NavigationDestination?
-    @StateObject private var localizationHelper = LocalizationHelper.shared
+    @ObservedObject private var localizationHelper = LocalizationHelper.shared
     
     enum NavigationDestination {
         case settings

@@ -10,14 +10,14 @@ import SwiftData
 
 struct FieldGuideView: View {
     @Query private var animals: [Animal]
-    @Query private var bingoAnimals: [BingoAnimal]
-    @StateObject private var localizationHelper = LocalizationHelper.shared
+    @Query private var stampCollections: [StampCollection]
+    @ObservedObject private var localizationHelper = LocalizationHelper.shared
     @Environment(\.modelContext) private var modelContext
-    
-    // 수집된 동물들 (BingoAnimal 기반 - 영구 수집 기록)
+
+    // 수집된 동물들 (StampCollection 기반 - 영구 수집 기록)
     private var collectedAnimals: [Animal] {
-        let collectedAnimalIds = Set(bingoAnimals.map { $0.animalId })
-        
+        let collectedAnimalIds = Set(stampCollections.map { $0.animalId })
+
         return animals.filter { animal in
             collectedAnimalIds.contains(animal.id.uuidString)
         }
@@ -35,7 +35,7 @@ struct FieldGuideView: View {
 
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     // 제목
@@ -136,8 +136,7 @@ struct FieldGuideView: View {
     }
     
     private func isAnimalCollected(_ animal: Animal) -> Bool {
-        // 모든 표시되는 동물은 이미 수집된 동물이므로 항상 true
-        return true
+        stampCollections.contains { $0.animalId == animal.id.uuidString }
     }
 }
 

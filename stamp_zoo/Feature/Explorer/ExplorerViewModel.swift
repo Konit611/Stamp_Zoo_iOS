@@ -73,6 +73,8 @@ class ExplorerViewModel {
     func updateModelContext(_ newContext: ModelContext) {
         self.modelContext = newContext
         loadFacilities()
+        loadBingoAnimals()
+        loadStampCollections()
     }
     
     /// 시설 데이터 로드
@@ -121,21 +123,14 @@ class ExplorerViewModel {
         }
     }
     
-    /// 해당 시설에 수집된 동물이 있는지 확인
+    /// 해당 시설에 수집된 동물이 있는지 확인 (StampCollection 기반 - 영구 기록)
     private func hasAnyCollectedAnimal(in facility: Facility) -> Bool {
         guard let animals = facility.animals else { return false }
-        
-        // 수집된 빙고 번호들 가져오기
-        let collectedBingoNumbers = Set(stampCollections.map { $0.bingoNumber })
-        
-        // 이 시설의 동물 중에 수집된 것이 있는지 확인
+
+        let collectedAnimalIds = Set(stampCollections.map { $0.animalId })
+
         return animals.contains { animal in
-            // 이 동물이 빙고에 포함된 동물인지 확인
-            let bingoAnimal = bingoAnimals.first { $0.animalId == animal.id.uuidString }
-            if let bingoNumber = bingoAnimal?.bingoNumber {
-                return collectedBingoNumbers.contains(bingoNumber)
-            }
-            return false
+            collectedAnimalIds.contains(animal.id.uuidString)
         }
     }
     
@@ -144,7 +139,7 @@ class ExplorerViewModel {
         return facility.location ?? LocalizationHelper.shared.localizedText(
             korean: "위치 정보 없음",
             english: "No Location Info",
-            japanese: "位置情報나し",
+            japanese: "位置情報なし",
             chinese: "无位置信息"
         )
     }

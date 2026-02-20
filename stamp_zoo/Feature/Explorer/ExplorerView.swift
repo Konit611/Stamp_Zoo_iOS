@@ -12,7 +12,7 @@ struct ExplorerView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = ExplorerViewModel()
     @State private var selectedCategory: Category = .all
-    @StateObject private var localizationHelper = LocalizationHelper.shared
+    @ObservedObject private var localizationHelper = LocalizationHelper.shared
     
     enum Category: String, CaseIterable {
         case all = "전체"
@@ -47,7 +47,7 @@ struct ExplorerView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // 제목
                 VStack(alignment: .leading, spacing: 8) {

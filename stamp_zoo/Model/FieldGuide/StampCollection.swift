@@ -13,6 +13,7 @@ import SwiftData
 final class StampCollection {
     @Attribute(.unique) var id: UUID
     var bingoNumber: Int
+    var animalId: String
     var collectedAt: Date
     var qrCode: String
     var facilityName: String
@@ -44,6 +45,7 @@ final class StampCollection {
     init(
         id: UUID = UUID(),
         bingoNumber: Int,
+        animalId: String,
         qrCode: String,
         facilityName: String,
         userLatitude: Double? = nil,
@@ -52,6 +54,7 @@ final class StampCollection {
     ) {
         self.id = id
         self.bingoNumber = bingoNumber
+        self.animalId = animalId
         self.qrCode = qrCode
         self.facilityName = facilityName
         self.userLatitude = userLatitude

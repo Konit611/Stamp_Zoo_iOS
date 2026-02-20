@@ -28,23 +28,24 @@ class BingoHomeViewModel {
         loadAnimals()
         loadBingoAnimals()
         loadCollectedStamps()
+        updateBingoStamps()
     }
     
     // MARK: - Computed Properties
     
-    /// 9개의 빙고 스탬프 배열 (0-8 인덱스)
-    var bingoStamps: [BingoStamp] {
+    /// 캐시된 빙고 스탬프 배열 (0-8 인덱스)
+    private(set) var bingoStamps: [BingoStamp] = []
+
+    /// bingoStamps 캐시 갱신
+    private func updateBingoStamps() {
         var stamps: [BingoStamp] = []
-        
-        // 0-8까지 9개의 빙고 위치 생성
         for position in 0..<9 {
-            let bingoNumber = position + 1 // bingoNumber는 1-9
+            let bingoNumber = position + 1
             let animal = getAnimal(for: bingoNumber)
-            let isCollected = collectedStamps.contains { $0.bingoNumber == bingoNumber }
+            let isCollected = allBingoAnimals.contains { $0.bingoNumber == bingoNumber }
             stamps.append(BingoStamp(animal: animal, position: position, isCollected: isCollected))
         }
-        
-        return stamps
+        bingoStamps = stamps
     }
     
     /// 빙고에 포함된 동물들
@@ -83,6 +84,7 @@ class BingoHomeViewModel {
         loadAnimals()
         loadBingoAnimals()
         loadCollectedStamps()
+        updateBingoStamps()
     }
     
     /// 동물 데이터 로드
@@ -116,6 +118,7 @@ class BingoHomeViewModel {
         loadAnimals()
         loadBingoAnimals()
         loadCollectedStamps()
+        updateBingoStamps()
     }
     
     /// 특정 위치의 스탬프 정보 가져오기
@@ -137,37 +140,9 @@ class BingoHomeViewModel {
         }
     }
     
-    /// QR 스캔을 통한 스탬프 수집
-    func collectStamp(bingoNumber: Int, qrCode: String, facilityName: String, isTestCollection: Bool = false) {
-        guard let modelContext = modelContext else { return }
-        
-        // 이미 수집된 스탬프인지 확인
-        let alreadyCollected = collectedStamps.contains { $0.bingoNumber == bingoNumber }
-        if alreadyCollected {
-            return
-        }
-        
-        // 새로운 스탬프 수집 기록 생성
-        let newCollection = StampCollection(
-            bingoNumber: bingoNumber,
-            qrCode: qrCode,
-            facilityName: facilityName,
-            isTestCollection: isTestCollection
-        )
-        
-        modelContext.insert(newCollection)
-        
-        do {
-            try modelContext.save()
-            loadCollectedStamps() // 새로고침
-        } catch {
-            print("Failed to save stamp collection: \(error)")
-        }
-    }
-    
-    /// 특정 빙고 번호의 스탬프가 수집되었는지 확인
+    /// 특정 빙고 번호의 스탬프가 수집되었는지 확인 (BingoAnimal 기반 - 시즌 리셋 반영)
     func isStampCollected(bingoNumber: Int) -> Bool {
-        return collectedStamps.contains { $0.bingoNumber == bingoNumber }
+        return allBingoAnimals.contains { $0.bingoNumber == bingoNumber }
     }
     
     /// 수집된 스탬프 정보 가져오기

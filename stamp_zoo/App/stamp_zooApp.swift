@@ -13,7 +13,6 @@ struct stamp_zooApp: App {
     @StateObject private var localizationManager = LocalizationManager.shared
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
             Animal.self,
             Facility.self,
             StampCollection.self,
@@ -32,7 +31,14 @@ struct stamp_zooApp: App {
             
             return container
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // ModelContainer 생성 실패 시 인메모리로 폴백
+            print("Could not create ModelContainer: \(error). Falling back to in-memory store.")
+            let fallbackConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+            do {
+                return try ModelContainer(for: schema, configurations: [fallbackConfig])
+            } catch {
+                fatalError("Could not create fallback ModelContainer: \(error)")
+            }
         }
     }()
 

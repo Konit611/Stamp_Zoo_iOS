@@ -14,7 +14,7 @@ struct BingoQRView: View {
     
     @StateObject private var qrCoordinator = QRScannerCoordinator()
     @StateObject private var locationService = LocationService()
-    @StateObject private var localizationHelper = LocalizationHelper.shared
+    @ObservedObject private var localizationHelper = LocalizationHelper.shared
     
     @State private var qrValidationService: QRValidationService?
     @State private var showingAlert = false
@@ -101,8 +101,16 @@ struct BingoQRView: View {
         .onAppear {
             setupServices()
             locationService.requestLocationPermission()
-            qrCoordinator.delegate = self
-            
+            qrCoordinator.onQRCodeScanned = { code in
+                isScanning = false
+                processQRCode(code)
+            }
+            qrCoordinator.onError = { error in
+                isScanning = false
+                alertMessage = error.localizedDescription
+                showingAlert = true
+            }
+
             // 카메라 권한이 이미 승인되었다면 자동으로 스캔 시작
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 if qrCoordinator.permissionGranted {
@@ -184,20 +192,6 @@ struct BingoQRView: View {
             alertMessage = result.localizedMessage
         }
         
-        showingAlert = true
-    }
-}
-
-// MARK: - QRScannerCoordinatorDelegate
-extension BingoQRView: QRScannerCoordinatorDelegate {
-    func didScanQRCode(_ code: String) {
-        isScanning = false
-        processQRCode(code)
-    }
-    
-    func didFailWithError(_ error: QRScannerError) {
-        isScanning = false
-        alertMessage = error.localizedDescription
         showingAlert = true
     }
 }

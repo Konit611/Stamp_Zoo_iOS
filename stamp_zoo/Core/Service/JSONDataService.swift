@@ -9,6 +9,7 @@ import Foundation
 import SwiftData
 
 /// JSON 파일을 통한 동적 데이터 관리 서비스
+@MainActor
 class JSONDataService {
     static let shared = JSONDataService()
     
@@ -49,22 +50,30 @@ class JSONDataService {
             let facilities = try context.fetch(facilityDescriptor)
             return !animals.isEmpty && !facilities.isEmpty
         } catch {
+            #if DEBUG
             print("데이터 확인 중 오류: \(error)")
+            #endif
             return false
         }
     }
     
     /// 새로운 업데이트가 있는지 확인하고 데이터 업데이트
     private static func checkAndUpdateData(in context: ModelContext) async {
+        #if DEBUG
         print("🔍 업데이트 확인 중...")
+        #endif
         guard let latestDataFile = getLatestJSONFile() else {
+            #if DEBUG
             print("사용 가능한 JSON 파일이 없습니다.")
+            #endif
             return
         }
-        
+
         // JSON 내부의 last_updated 값과 refresh 신호 확인
         guard let jsonMetadata = getJSONMetadata(from: latestDataFile) else {
+            #if DEBUG
             print("JSON 메타데이터를 읽을 수 없습니다.")
+            #endif
             return
         }
         
@@ -73,31 +82,41 @@ class JSONDataService {
         let storedLastUpdate = shared.userDefaults.string(forKey: shared.lastUpdateKey) ?? ""
         let latestFileDate = extractDateFromFileName(latestDataFile)
         
+        #if DEBUG
         print("📅 JSON 파일명 날짜: \(latestFileDate)")
         print("📅 JSON last_updated: \(jsonLastUpdated)")
         print("📅 저장된 마지막 업데이트: \(storedLastUpdate)")
         print("🔄 refresh_bingo_animals: \(refreshBingoAnimals)")
+        #endif
         
         // 업데이트 조건: 1) 새로운 날짜 또는 2) refresh 신호가 true
         let needsUpdate = jsonLastUpdated > storedLastUpdate || refreshBingoAnimals
         
         if needsUpdate {
             if refreshBingoAnimals {
+                #if DEBUG
                 print("🚀 강제 업데이트: refresh_bingo_animals = true")
+                #endif
             } else {
+                #if DEBUG
                 print("🆕 새로운 데이터 업데이트 발견: \(jsonLastUpdated)")
+                #endif
             }
             await loadJSONData(from: latestDataFile, in: context)
             shared.userDefaults.set(jsonLastUpdated, forKey: shared.lastUpdateKey)
         } else {
+            #if DEBUG
             print("✅ 데이터가 최신 상태입니다.")
+            #endif
         }
     }
     
     /// 최신 JSON 파일 로드
     private static func loadLatestJSONData(in context: ModelContext) async {
         guard let latestDataFile = getLatestJSONFile() else {
+            #if DEBUG
             print("JSON 파일을 찾을 수 없습니다. 앱 번들에 JSON 파일을 추가해주세요.")
+            #endif
             return
         }
         
@@ -110,7 +129,9 @@ class JSONDataService {
     /// 특정 JSON 파일에서 데이터 로드
     private static func loadJSONData(from fileName: String, in context: ModelContext) async {
         guard let url = Bundle.main.url(forResource: fileName.replacingOccurrences(of: ".json", with: ""), withExtension: "json") else {
+            #if DEBUG
             print("JSON 파일을 찾을 수 없습니다: \(fileName)")
+            #endif
             return
         }
         
@@ -124,11 +145,15 @@ class JSONDataService {
             // 새로운 데이터 저장
             await saveJSONDataToSwiftData(zooData, in: context)
             
+            #if DEBUG
             print("데이터 로드 완료: \(zooData.metadata.description)")
             print("시설 \(zooData.facilities.count)개, 동물 \(zooData.animals.count)개 로드됨")
+            #endif
             
         } catch {
+            #if DEBUG
             print("JSON 데이터 로드 실패: \(error)")
+            #endif
         }
     }
     
@@ -164,9 +189,13 @@ class JSONDataService {
             // - BingoAnimal: Bingo 진행 상태 (refresh 신호 시에만 초기화)
             
             try context.save()
+            #if DEBUG
             print("기존 동물원 데이터 삭제 완료 (스탬프 수집 데이터는 보존)")
+            #endif
         } catch {
+            #if DEBUG
             print("기존 데이터 삭제 실패: \(error)")
+            #endif
         }
     }
     
@@ -185,7 +214,9 @@ class JSONDataService {
             // 동물 저장
             for animalJSON in zooData.animals {
                 guard let facility = facilityMap[animalJSON.facilityId] else {
+                    #if DEBUG
                     print("시설을 찾을 수 없습니다: \(animalJSON.facilityId)")
+                    #endif
                     continue
                 }
                 
@@ -202,20 +233,32 @@ class JSONDataService {
             }
             
             // refresh 신호에 따라 새 시즌 시작 (BingoAnimal만 초기화)
+            #if DEBUG
             print("🔍 refreshBingoAnimals 값: \(zooData.refreshBingoAnimals ?? false)")
+            #endif
             if zooData.refreshBingoAnimals == true {
+                #if DEBUG
                 print("🚀 새 시즌 시작 - 빙고 게임 초기화 (새로운 빙고 시작)")
+                #endif
                 await clearBingoAnimals(in: context)
+                #if DEBUG
                 print("✅ 새 시즌 시작: 빙고 게임(BingoAnimal)이 초기화되었습니다.")
                 print("📝 StampCollection은 보존됨 (Field Guide 수집 기록 유지)")
+                #endif
             } else {
+                #if DEBUG
                 print("⏸️ refresh 신호 없음 - 기존 수집 데이터 유지")
+                #endif
             }
-            
+
             try context.save()
+            #if DEBUG
             print("JSON 데이터 저장 완료")
+            #endif
         } catch {
+            #if DEBUG
             print("JSON 데이터 저장 실패: \(error)")
+            #endif
         }
     }
     
@@ -228,7 +271,9 @@ class JSONDataService {
             return files.filter { $0.hasPrefix("zoo_data_") && $0.hasSuffix(".json") }
                 .sorted(by: >)  // 최신 날짜부터
         } catch {
+            #if DEBUG
             print("JSON 파일 검색 실패: \(error)")
+            #endif
             return []
         }
     }
@@ -275,23 +320,33 @@ class JSONDataService {
         do {
             let descriptor = FetchDescriptor<BingoAnimal>()
             let bingoAnimals = try context.fetch(descriptor)
+            #if DEBUG
             print("🗑️ 삭제할 BingoAnimal 개수: \(bingoAnimals.count)")
-            
+            #endif
+
             for bingoAnimal in bingoAnimals {
+                #if DEBUG
                 print("  - 삭제: BingoAnimal ID=\(bingoAnimal.id), 빙고번호=\(bingoAnimal.bingoNumber)")
+                #endif
                 context.delete(bingoAnimal)
             }
-            
+
             try context.save()
+            #if DEBUG
             print("✅ BingoAnimal 데이터 삭제 완료 (새 시즌 시작)")
-            
+            #endif
+
             // 삭제 후 확인
             let checkDescriptor = FetchDescriptor<BingoAnimal>()
             let remainingAnimals = try context.fetch(checkDescriptor)
+            #if DEBUG
             print("🔍 삭제 후 남은 BingoAnimal 개수: \(remainingAnimals.count)")
-            
+            #endif
+
         } catch {
+            #if DEBUG
             print("❌ BingoAnimal 데이터 삭제 실패: \(error)")
+            #endif
         }
     }
     

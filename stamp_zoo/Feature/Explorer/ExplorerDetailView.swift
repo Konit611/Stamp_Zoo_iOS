@@ -12,7 +12,7 @@ struct ExplorerDetailView: View {
     let isVisited: Bool
     
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var localizationHelper = LocalizationHelper.shared
+    @ObservedObject private var localizationHelper = LocalizationHelper.shared
     
     var body: some View {
         ScrollView {

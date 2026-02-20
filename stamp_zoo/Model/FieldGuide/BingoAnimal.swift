@@ -66,7 +66,7 @@ final class BingoCard {
     }
     
     // 현재 언어에 맞는 설명 반환
-    var description: String {
+    var localizedDescription: String {
         LocalizationHelper.shared.localizedText(
             korean: descriptionKo,
             english: descriptionEn,

@@ -10,7 +10,7 @@ import SwiftData
 
 struct BingoDetailView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var localizationHelper = LocalizationHelper.shared
+    @ObservedObject private var localizationHelper = LocalizationHelper.shared
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = BingoHomeViewModel()
     

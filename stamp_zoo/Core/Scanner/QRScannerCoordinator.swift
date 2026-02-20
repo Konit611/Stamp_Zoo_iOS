@@ -9,11 +9,6 @@ import AVFoundation
 import UIKit
 import AudioToolbox
 
-protocol QRScannerCoordinatorDelegate {
-    func didScanQRCode(_ code: String)
-    func didFailWithError(_ error: QRScannerError)
-}
-
 enum QRScannerError: Error {
     case cameraNotAvailable
     case permissionDenied
@@ -55,8 +50,9 @@ enum QRScannerError: Error {
 }
 
 class QRScannerCoordinator: NSObject, ObservableObject {
-    var delegate: QRScannerCoordinatorDelegate?
-    
+    var onQRCodeScanned: ((String) -> Void)?
+    var onError: ((QRScannerError) -> Void)?
+
     private var captureSession: AVCaptureSession?
     private var previewLayer: AVCaptureVideoPreviewLayer?
     private var lastScannedCode: String?
@@ -100,7 +96,7 @@ class QRScannerCoordinator: NSObject, ObservableObject {
                 self?.permissionGranted = granted
                 print("Camera permission request result: \(granted)")
                 if !granted {
-                    self?.delegate?.didFailWithError(.permissionDenied)
+                    self?.onError?(.permissionDenied)
                 }
             }
         }
@@ -113,13 +109,13 @@ class QRScannerCoordinator: NSObject, ObservableObject {
         
         guard permissionGranted else {
             print("Camera permission not granted")
-            delegate?.didFailWithError(.permissionDenied)
+            onError?(.permissionDenied)
             return nil
         }
         
         guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else {
             print("No video capture device available")
-            delegate?.didFailWithError(.cameraNotAvailable)
+            onError?(.cameraNotAvailable)
             return nil
         }
         
@@ -136,7 +132,7 @@ class QRScannerCoordinator: NSObject, ObservableObject {
                 print("Video input added successfully")
             } else {
                 print("Cannot add video input")
-                delegate?.didFailWithError(.scanningFailed)
+                onError?(.scanningFailed)
                 return nil
             }
             
@@ -150,7 +146,7 @@ class QRScannerCoordinator: NSObject, ObservableObject {
                 print("Metadata output added successfully")
             } else {
                 print("Cannot add metadata output")
-                delegate?.didFailWithError(.scanningFailed)
+                onError?(.scanningFailed)
                 return nil
             }
             
@@ -158,7 +154,7 @@ class QRScannerCoordinator: NSObject, ObservableObject {
             return captureSession
         } catch {
             print("Error setting up capture session: \(error)")
-            delegate?.didFailWithError(.scanningFailed)
+            onError?(.scanningFailed)
             return nil
         }
     }
@@ -250,7 +246,7 @@ class QRScannerCoordinator: NSObject, ObservableObject {
         AudioServicesPlaySystemSound(1016)
         
         // 델리게이트에 결과 전달
-        delegate?.didScanQRCode(code)
+        onQRCodeScanned?(code)
     }
 }
 

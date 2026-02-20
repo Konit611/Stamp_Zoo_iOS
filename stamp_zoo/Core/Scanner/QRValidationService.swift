@@ -172,44 +172,48 @@ class QRValidationService {
     
     /// 시설용 QR 코드 검증 (위치 제한 있음)
     private func validateFacilityQRCode(_ code: String) -> QRValidationResult {
-        // QR 코드 파싱: stamp_zoo://facility/{facilityId}/animal/{bingoNumber}
+        // QR 코드 파싱: stamp_zoo://facility/{facilityId}/animal/{animalIndex}
         let components = code.replacingOccurrences(of: "stamp_zoo://facility/", with: "").split(separator: "/")
-        
+
         guard components.count == 3,
               !components[0].isEmpty,
               components[1] == "animal",
-              let bingoNumber = Int(components[2]) else {
+              let animalIndex = Int(components[2]) else {
             return .invalidCode
         }
-        
+
         let facilityId = String(components[0])
-        
-        guard let animal = findAnimal(by: bingoNumber) else {
-            return .animalNotFound
-        }
-        
+
         guard let facility = findFacility(by: facilityId) else {
             return .invalidCode
         }
-        
-        if isAlreadyCollected(bingoNumber: bingoNumber) {
+
+        // 시설의 동물 목록에서 인덱스로 동물 찾기
+        guard let animals = facility.animals,
+              animalIndex >= 0 && animalIndex < animals.count else {
+            return .animalNotFound
+        }
+
+        let animal = animals[animalIndex]
+
+        if isAnimalAlreadyCollected(animalId: animal.id.uuidString) {
             return .alreadyCollected(animal: animal)
         }
-        
+
         // 위치 검증
         guard locationService.hasLocationPermission else {
             return .locationUnavailable
         }
-        
+
         guard locationService.currentLocation != nil else {
             return .locationUnavailable
         }
-        
+
         if !locationService.isUserInFacilityRange(facility) {
             let distance = locationService.distanceToFacility(facility) ?? 0
             return .invalidLocation(requiredFacility: facility, distance: distance)
         }
-        
+
         return .success(animal: animal, facility: facility)
     }
     
@@ -252,6 +256,7 @@ class QRValidationService {
         let userLocation = locationService.currentLocation
         let stampCollection = StampCollection(
             bingoNumber: nextBingoNumber,
+            animalId: animal.id.uuidString,
             qrCode: qrCode,
             facilityName: facilityName,
             userLatitude: userLocation?.coordinate.latitude,
@@ -276,32 +281,6 @@ class QRValidationService {
     private func extractAnimalUUID(from code: String) -> UUID? {
         guard let lastComponent = code.split(separator: "/").last else { return nil }
         return UUID(uuidString: String(lastComponent))
-    }
-    
-    /// QR 코드에서 빙고 번호 추출
-    private func extractBingoNumber(from code: String) -> Int? {
-        guard let lastComponent = code.split(separator: "/").last else { return nil }
-        return Int(lastComponent)
-    }
-    
-    /// 빙고 번호로 동물 찾기
-    private func findAnimal(by bingoNumber: Int) -> Animal? {
-        // 먼저 BingoAnimal에서 animalId 찾기
-        let bingoDescriptor = FetchDescriptor<BingoAnimal>(
-            predicate: #Predicate { $0.bingoNumber == bingoNumber }
-        )
-        
-        guard let bingoAnimal = try? modelContext.fetch(bingoDescriptor).first,
-              let animalUUID = UUID(uuidString: bingoAnimal.animalId) else {
-            return nil
-        }
-        
-        // Animal ID로 실제 동물 찾기
-        let animalDescriptor = FetchDescriptor<Animal>(
-            predicate: #Predicate { $0.id == animalUUID }
-        )
-        
-        return try? modelContext.fetch(animalDescriptor).first
     }
     
     /// UUID로 동물 찾기
