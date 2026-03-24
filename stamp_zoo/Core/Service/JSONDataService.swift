@@ -11,10 +11,17 @@ import SwiftData
 /// JSON 파일을 통한 동적 데이터 관리 서비스
 @MainActor
 class JSONDataService {
+    /// 앱 최초 출시 시즌 (마이그레이션 기본값 및 JSON 로드 전 폴백용)
+    static let initialSeason = "2025"
+
     static let shared = JSONDataService()
-    
+
     private let userDefaults = UserDefaults.standard
     private let lastUpdateKey = "zoo_data_last_update_date"
+    private let lastRefreshedSeasonKey = "zoo_data_last_refreshed_season"
+
+    /// 현재 로드된 시즌 (QR 수집 시 사용)
+    private(set) var currentSeason: String = initialSeason
     
     private init() {}
     
@@ -69,49 +76,57 @@ class JSONDataService {
             return
         }
 
-        // JSON 내부의 last_updated 값과 refresh 신호 확인
         guard let jsonMetadata = getJSONMetadata(from: latestDataFile) else {
             #if DEBUG
             print("JSON 메타데이터를 읽을 수 없습니다.")
             #endif
             return
         }
-        
+
         let jsonLastUpdated = jsonMetadata.lastUpdated
-        let refreshBingoAnimals = jsonMetadata.refreshBingoAnimals
+        let jsonSeason = jsonMetadata.season
         let storedLastUpdate = shared.userDefaults.string(forKey: shared.lastUpdateKey) ?? ""
-        let latestFileDate = extractDateFromFileName(latestDataFile)
-        
+        let storedSeason = shared.userDefaults.string(forKey: shared.lastRefreshedSeasonKey) ?? ""
+
+        // 현재 시즌 업데이트
+        shared.currentSeason = jsonSeason
+
         #if DEBUG
-        print("📅 JSON 파일명 날짜: \(latestFileDate)")
         print("📅 JSON last_updated: \(jsonLastUpdated)")
         print("📅 저장된 마지막 업데이트: \(storedLastUpdate)")
-        print("🔄 refresh_bingo_animals: \(refreshBingoAnimals)")
+        print("🏷️ JSON season: \(jsonSeason)")
+        print("🏷️ 저장된 season: \(storedSeason)")
         #endif
-        
-        // 업데이트 조건: 1) 새로운 날짜 또는 2) refresh 신호가 true
-        let needsUpdate = jsonLastUpdated > storedLastUpdate || refreshBingoAnimals
-        
-        if needsUpdate {
-            if refreshBingoAnimals {
-                #if DEBUG
-                print("🚀 강제 업데이트: refresh_bingo_animals = true")
-                #endif
-            } else {
-                #if DEBUG
-                print("🆕 새로운 데이터 업데이트 발견: \(jsonLastUpdated)")
-                #endif
-            }
+
+        // 데이터 업데이트 조건: JSON의 last_updated가 더 최신인 경우
+        let needsDataUpdate = jsonLastUpdated > storedLastUpdate
+
+        // 빙고 리셋 조건: 시즌이 변경된 경우 (한 번만 실행됨)
+        let needsSeasonReset = jsonSeason != storedSeason && !storedSeason.isEmpty
+
+        if needsDataUpdate {
+            #if DEBUG
+            print("🆕 새로운 데이터 업데이트 발견: \(jsonLastUpdated)")
+            #endif
             await loadJSONData(from: latestDataFile, in: context)
             shared.userDefaults.set(jsonLastUpdated, forKey: shared.lastUpdateKey)
+        } else if needsSeasonReset {
+            // 데이터는 최신이지만 시즌이 바뀐 경우 (빙고만 리셋)
+            #if DEBUG
+            print("🔄 시즌 변경 감지: \(storedSeason) → \(jsonSeason), 빙고 리셋")
+            #endif
+            await clearBingoAnimals(in: context)
         } else {
             #if DEBUG
             print("✅ 데이터가 최신 상태입니다.")
             #endif
         }
+
+        // 시즌 정보 저장 (리셋 여부와 관계없이 항상 최신화)
+        shared.userDefaults.set(jsonSeason, forKey: shared.lastRefreshedSeasonKey)
     }
     
-    /// 최신 JSON 파일 로드
+    /// 최신 JSON 파일 로드 (첫 실행)
     private static func loadLatestJSONData(in context: ModelContext) async {
         guard let latestDataFile = getLatestJSONFile() else {
             #if DEBUG
@@ -119,11 +134,17 @@ class JSONDataService {
             #endif
             return
         }
-        
+
         await loadJSONData(from: latestDataFile, in: context)
-        
+
         let fileDate = extractDateFromFileName(latestDataFile)
-        UserDefaults.standard.set(fileDate, forKey: shared.lastUpdateKey)
+        shared.userDefaults.set(fileDate, forKey: shared.lastUpdateKey)
+
+        // 첫 실행 시 시즌 정보도 저장
+        if let jsonMetadata = getJSONMetadata(from: latestDataFile) {
+            shared.currentSeason = jsonMetadata.season
+            shared.userDefaults.set(jsonMetadata.season, forKey: shared.lastRefreshedSeasonKey)
+        }
     }
     
     /// 특정 JSON 파일에서 데이터 로드
@@ -232,24 +253,34 @@ class JSONDataService {
                 }
             }
             
-            // refresh 신호에 따라 새 시즌 시작 (BingoAnimal만 초기화)
+            // 시즌 비교를 통한 빙고 리셋 (BingoAnimal만 초기화)
+            let jsonSeason = zooData.metadata.season
+            let storedSeason = shared.userDefaults.string(forKey: shared.lastRefreshedSeasonKey) ?? ""
+
+            // 현재 시즌 업데이트
+            shared.currentSeason = jsonSeason
+
             #if DEBUG
-            print("🔍 refreshBingoAnimals 값: \(zooData.refreshBingoAnimals ?? false)")
+            print("🏷️ JSON season: \(jsonSeason), 저장된 season: \(storedSeason)")
             #endif
-            if zooData.refreshBingoAnimals == true {
+
+            if jsonSeason != storedSeason && !storedSeason.isEmpty {
                 #if DEBUG
-                print("🚀 새 시즌 시작 - 빙고 게임 초기화 (새로운 빙고 시작)")
+                print("🚀 새 시즌 시작: \(storedSeason) → \(jsonSeason) - 빙고 게임 초기화")
                 #endif
                 await clearBingoAnimals(in: context)
                 #if DEBUG
-                print("✅ 새 시즌 시작: 빙고 게임(BingoAnimal)이 초기화되었습니다.")
+                print("✅ 빙고 게임(BingoAnimal) 초기화 완료")
                 print("📝 StampCollection은 보존됨 (Field Guide 수집 기록 유지)")
                 #endif
             } else {
                 #if DEBUG
-                print("⏸️ refresh 신호 없음 - 기존 수집 데이터 유지")
+                print("⏸️ 시즌 변경 없음 - 기존 빙고 데이터 유지")
                 #endif
             }
+
+            // 시즌 정보 저장
+            shared.userDefaults.set(jsonSeason, forKey: shared.lastRefreshedSeasonKey)
 
             try context.save()
             #if DEBUG
@@ -285,26 +316,25 @@ class JSONDataService {
     }
     
     /// JSON 파일에서 메타데이터 가져오기
-    private static func getJSONMetadata(from fileName: String) -> (lastUpdated: String, refreshBingoAnimals: Bool)? {
+    private static func getJSONMetadata(from fileName: String) -> (lastUpdated: String, season: String)? {
         guard let url = Bundle.main.url(forResource: fileName.replacingOccurrences(of: ".json", with: ""), withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let jsonObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil
         }
-        
-        // metadata에서 last_updated 추출
+
+        // metadata에서 last_updated, season 추출
         let lastUpdated: String
-        if let metadata = jsonObject["metadata"] as? [String: Any],
-           let lastUpdatedValue = metadata["last_updated"] as? String {
-            lastUpdated = lastUpdatedValue
+        let season: String
+        if let metadata = jsonObject["metadata"] as? [String: Any] {
+            lastUpdated = metadata["last_updated"] as? String ?? ""
+            season = metadata["season"] as? String ?? initialSeason
         } else {
             lastUpdated = ""
+            season = initialSeason
         }
-        
-        // refresh_bingo_animals 추출
-        let refreshBingoAnimals = jsonObject["refresh_bingo_animals"] as? Bool ?? false
-        
-        return (lastUpdated: lastUpdated, refreshBingoAnimals: refreshBingoAnimals)
+
+        return (lastUpdated: lastUpdated, season: season)
     }
     
     /// 파일명에서 날짜 추출 (zoo_data_YYYY_MM_DD.json 형식)

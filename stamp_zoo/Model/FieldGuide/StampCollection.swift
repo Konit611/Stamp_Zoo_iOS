@@ -20,6 +20,8 @@ final class StampCollection {
     var userLatitude: Double?
     var userLongitude: Double?
     var isTestCollection: Bool
+    /// 마이그레이션 기본값: 기존 사용자의 수집 이력은 최초 시즌으로 귀속
+    var season: String = JSONDataService.initialSeason
     
     // 현재 언어에 맞는 수집 시설명 반환
     var localizedFacilityName: String {
@@ -50,7 +52,8 @@ final class StampCollection {
         facilityName: String,
         userLatitude: Double? = nil,
         userLongitude: Double? = nil,
-        isTestCollection: Bool = false
+        isTestCollection: Bool = false,
+        season: String = JSONDataService.initialSeason
     ) {
         self.id = id
         self.bingoNumber = bingoNumber
@@ -60,6 +63,7 @@ final class StampCollection {
         self.userLatitude = userLatitude
         self.userLongitude = userLongitude
         self.isTestCollection = isTestCollection
+        self.season = season
         self.collectedAt = Date()
     }
 }

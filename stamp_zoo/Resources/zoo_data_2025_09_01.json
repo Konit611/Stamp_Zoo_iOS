@@ -1,6 +1,7 @@
 {
   "metadata": {
     "version": "1.1.0",
+    "season": "2025",
     "last_updated": "2025-09-02",
     "description": "업데이트된 동물원 및 수족관 데이터 - 새로운 동물 추가",
     "data_count": 10
@@ -366,6 +367,5 @@
           "is_active": true,
           "display_order": 1
         }
-    ],
-    "refresh_bingo_animals": false
+    ]
 }

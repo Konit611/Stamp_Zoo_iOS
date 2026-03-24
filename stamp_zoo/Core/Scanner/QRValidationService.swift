@@ -261,7 +261,8 @@ class QRValidationService {
             facilityName: facilityName,
             userLatitude: userLocation?.coordinate.latitude,
             userLongitude: userLocation?.coordinate.longitude,
-            isTestCollection: isTestCollection
+            isTestCollection: isTestCollection,
+            season: JSONDataService.shared.currentSeason
         )
         
         modelContext.insert(stampCollection)

@@ -12,12 +12,14 @@ import Foundation
 /// JSON 데이터 파일의 메타데이터
 struct DataFileMetadata: Codable {
     let version: String
+    let season: String
     let lastUpdated: String
     let description: String
     let dataCount: Int
-    
+
     enum CodingKeys: String, CodingKey {
         case version
+        case season
         case lastUpdated = "last_updated"
         case description
         case dataCount = "data_count"
@@ -30,14 +32,12 @@ struct ZooDataFile: Codable {
     let facilities: [FacilityJSON]
     let animals: [AnimalJSON]
     let bingoCards: [BingoCardJSON]?
-    let refreshBingoAnimals: Bool? // bingoAnimals 테이블 초기화 신호
-    
+
     enum CodingKeys: String, CodingKey {
         case metadata
         case facilities
         case animals
         case bingoCards
-        case refreshBingoAnimals = "refresh_bingo_animals"
     }
 }
 
